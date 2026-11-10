@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOÑABLANCA</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f3edf8;margin:0;padding:20px;color:#333}
+.contenedor{max-width:1200px;margin:auto;background:white;padding:25px;border-radius:16px;box-shadow:0 4px 18px #50286418}
+h1,h2,h3{color:#7137A8}
+input,select{padding:11px;margin:6px 0 14px;width:100%;border:1px solid #d9c5e8;border-radius:8px;font-size:15px}
+button{padding:11px 15px;margin:5px 3px;background:#7137A8;color:white;border:0;border-radius:8px;cursor:pointer;font-weight:bold}
+button:hover{background:#572681}
+.menu{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}
+.menu button{flex:1;min-width:110px}
+.seccion{display:none;margin-top:20px}
+.activa{display:block}
+.tarjeta{background:#f8f2fc;border:1px solid #e6d8f0;padding:16px;margin:12px 0;border-radius:12px}
+.alerta{background:#fff0d9;border-left:5px solid #e69a20;padding:12px;margin:8px 0;border-radius:6px}
+.tabla-contenedor{width:100%;overflow-x:auto;border:1px solid #e6d8f0;border-radius:10px}
+table{width:100%;min-width:950px;border-collapse:collapse}
+th{background:#7137A8;color:white;padding:12px;text-align:left}
+td{border-bottom:1px solid #eadff1;padding:10px}
+.fila-categoria td{background:#eadcf5;color:#572681;font-weight:bold}
+table input{width:85px;margin:0}
+.billetera-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.billetera-tarjeta{background:#f3eafa;border:1px solid #e4d3f0;padding:20px;border-radius:13px}
+.monto{color:#7137A8;font-size:27px;font-weight:bold;margin:10px 0}
+hr{border:0;border-top:1px solid #eadff1}
+.boton-borrar{background:#b83232}
+.producto-carrito{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="contenedor">
+<h1>DOÑABLANCA</h1>
+<p>Sistema de gestión del almacén</p>
+<div id="avisos"></div>
+
+<div class="menu">
+<button onclick="abrir('compras')">COMPRAS</button>
+<button onclick="abrir('stock')">STOCK</button>
+<button onclick="abrir('ventas')">VENTAS</button>
+<button onclick="abrir('estadisticas')">ESTADÍSTICAS</button>
+<button onclick="abrir('billetera')">BILLETERA</button>
+</div>
+<hr>
+
+<!-- COMPRAS -->
+<div id="compras" class="seccion activa">
+<h2>Registrar factura</h2>
+<label>Proveedor:</label>
+<input id="proveedor" placeholder="Nombre del proveedor">
+<label>Número de factura:</label>
+<input id="numeroFactura" placeholder="Número">
+
+<h2>Agregar productos</h2>
+<label>Producto:</label>
+<input id="nombre" placeholder="Nombre del producto">
+<label>Presentación:</label>
+<input id="presentacion" placeholder="Ej: 700 ml">
+<label>Categoría:</label>
+<select id="categoria">
+<option>Comestibles de almacén</option>
+<option>Bebidas y alcohol</option>
+<option>Helados</option>
+<option>Cigarrillos</option>
+</select>
+<label>Tipo de compra:</label>
+<select id="tipo">
+<option value="pack">Pack o bulto</option>
+<option value="unidad">Unidad</option>
+</select>
+<label>Cantidad de packs o unidades:</label>
+<input type="number" id="cantidad" min="1">
+<label>Unidades por pack:</label>
+<input type="number" id="unidades" value="1" min="1">
+<label>Precio unitario de factura:</label>
+<input type="number" id="precio" min="0" step="0.01">
+<label>Porcentaje de ganancia:</label>
+<input type="number" id="ganancia" value="30" min="0">
+<button onclick="agregarCompra()">AGREGAR PRODUCTO</button>
+
+<h2>Productos de esta factura</h2>
+<div id="listaCompras"></div>
+<div class="tarjeta">
+<h2>Total factura: $<span id="totalFactura">0.00</span></h2>
+</div>
+<button onclick="guardarFactura()">GUARDAR FACTURA</button>
+</div>
+
+<!-- STOCK -->
+<div id="stock" class="seccion">
+<h2>Mi stock</h2>
+<label>Buscar producto:</label>
+<input id="buscarStock" placeholder="Escribí un nombre..." oninput="mostrarStock()">
+<div class="tabla-contenedor">
+<table>
+<thead><tr>
+<th>Producto</th><th>Categoría</th><th>Presentación</th>
+<th>Stock</th><th>Costo</th><th>Precio venta</th>
+<th>Stock mínimo</th><th>Modificar</th>
+</tr></thead>
+<tbody id="listaStock"></tbody>
+</table>
+</div>
+</div>
+
+<!-- VENTAS -->
+<div id="ventas" class="seccion">
+<h2>Registrar venta</h2>
+<label>Producto:</label>
+<select id="productoVenta"></select>
+<label>Cantidad:</label>
+<input type="number" id="cantidadVenta" min="1">
+<label>Precio de venta por unidad:</label>
+<input type="number" id="precioVenta" min="0" step="0.01">
+
+<button onclick="agregarAlCarrito()">AÑADIR OTRO PRODUCTO</button>
+
+<h2>Productos de esta venta</h2>
+<div id="carritoVenta" class="tarjeta">Todavía no agregaste productos.</div>
+<h2>Total: <span id="totalCarrito">$0.00</span></h2>
+
+<label>Forma de pago:</label>
+<select id="formaPago">
+<option value="Efectivo">Efectivo</option>
+<option value="Transferencia">Transferencia</option>
+</select>
+<button onclick="registrarVenta()">REGISTRAR VENTA COMPLETA</button>
+
+<h2>Ventas realizadas</h2>
+<div class="tarjeta">
+Ingresos de hoy: $<strong id="ingresosHoy">0.00</strong>
+<br><br>
+Ingresos de esta semana: $<strong id="ingresosSemana">0.00</strong>
+</div>
+<div id="listaVentas"></div>
+</div>
+
+<!-- ESTADISTICAS -->
+<div id="estadisticas" class="seccion">
+<h2>Estadísticas del negocio</h2>
+<div class="tarjeta"><h3>Producto más vendido</h3><p id="masVendido">Todavía no hay ventas.</p></div>
+<div class="tarjeta"><h3>Producto menos vendido</h3><p id="menosVendido">Todavía no hay ventas.</p></div>
+<div class="tarjeta"><h3>Producto con mayor stock</h3><p id="mayorStock">Todavía no hay productos.</p></div>
+<div class="tarjeta"><h3>Mayor movimiento</h3><p id="movimiento">Todavía no hay ventas.</p></div>
+<div class="tarjeta"><h3>Ganancia estimada</h3><p id="gananciaTotal">$0.00</p></div>
+</div>
+
+<!-- BILLETERA -->
+<div id="billetera" class="seccion">
+<h2>Mi billetera</h2>
+<div class="billetera-grid">
+<div class="billetera-tarjeta">
+<h3>EFECTIVO</h3><p>Dinero recibido en efectivo</p>
+<div class="monto" id="efectivoTotal">$0.00</div>
+</div>
+<div class="billetera-tarjeta">
+<h3>TRANSFERENCIAS</h3><p>Dinero recibido por transferencia</p>
+<div class="monto" id="transferenciaTotal">$0.00</div>
+</div>
+<div class="billetera-tarjeta">
+<h3>TOTAL VENDIDO</h3><p>Efectivo + transferencias</p>
+<div class="monto" id="billeteraTotal">$0.00</div>
+</div>
+</div>
+<h2>Movimientos de hoy</h2>
+<div class="tarjeta">
+Efectivo de hoy: $<strong id="efectivoHoy">$0.00</strong>
+<br><br>
+Transferencias de hoy: $<strong id="transferenciaHoy">$0.00</strong>
+<br><br>
+Total de hoy: $<strong id="totalHoyBilletera">$0.00</strong>
+</div>
+<h2>Historial de movimientos</h2>
+<div id="historialBilletera"></div>
+<p id="ventasSinPago"></p>
+</div>
+</div>
+
+<script>
+let productos=[];
+let facturas=[];
+let ventas=[];
+let comprasActuales=[];
+let carritoVenta=[];
+
+const categorias=[
+"Comestibles de almacén",
+"Bebidas y alcohol",
+"Helados",
+"Cigarrillos"
+];
+
+function cargarDatos(){
+    try{
+        productos=JSON.parse(localStorage.getItem("geas_productos"))||[];
+        facturas=JSON.parse(localStorage.getItem("geas_facturas"))||[];
+        ventas=JSON.parse(localStorage.getItem("geas_ventas"))||[];
+        if(!Array.isArray(productos))productos=[];
+        if(!Array.isArray(facturas))facturas=[];
+        if(!Array.isArray(ventas))ventas=[];
+        productos.forEach(p=>{
+            p.stock=Number(p.stock)||0;
+            p.costo=Number(p.costo)||0;
+            p.venta=Number(p.venta)||0;
+            p.minimo=Number(p.minimo)||5;
+        });
+    }catch(e){
+        productos=[];facturas=[];ventas=[];
+    }
+}
+
+function guardarDatos(){
+    localStorage.setItem("geas_productos",JSON.stringify(productos));
+    localStorage.setItem("geas_facturas",JSON.stringify(facturas));
+    localStorage.setItem("geas_ventas",JSON.stringify(ventas));
+}
+
+function dinero(n){return "$"+Number(n||0).toFixed(2)}
+
+function fechaHoy(){
+    let f=new Date();
+    return f.getFullYear()+"-"+
+    String(f.getMonth()+1).padStart(2,"0")+"-"+
+    String(f.getDate()).padStart(2,"0");
+}
+
+function esEstaSemana(fecha){
+    let hoy=new Date(),inicio=new Date(hoy);
+    let dia=hoy.getDay();
+    inicio.setDate(hoy.getDate()-(dia===0?6:dia-1));
+    inicio.setHours(0,0,0,0);
+    let fin=new Date(inicio);
+    fin.setDate(inicio.getDate()+7);
+    let partes=fecha.split("-");
+    let f=new Date(+partes[0],+partes[1]-1,+partes[2]);
+    return f>=inicio&&f<fin;
+}
+
+function abrir(nombre){
+    document.querySelectorAll(".seccion").forEach(s=>s.classList.remove("activa"));
+    document.getElementById(nombre).classList.add("activa");
+    if(nombre==="stock")mostrarStock();
+    if(nombre==="ventas"){actualizarSelector();mostrarVentas();mostrarCarrito()}
+    if(nombre==="estadisticas")mostrarEstadisticas();
+    if(nombre==="billetera")mostrarBilletera();
+}
+
+/* COMPRAS */
+function agregarCompra(){
+    let nombre=document.getElementById("nombre").value.trim();
+    let presentacion=document.getElementById("presentacion").value.trim();
+    let categoria=document.getElementById("categoria").value;
+    let tipo=document.getElementById("tipo").value;
+    let cantidad=Number(document.getElementById("cantidad").value);
+    let unidades=tipo==="unidad"?1:Number(document.getElementById("unidades").value);
+    let precio=Number(document.getElementById("precio").value);
+    let ganancia=Number(document.getElementById("ganancia").value);
+
+    if(!nombre||cantidad<=0||unidades<=0||precio<=0||ganancia<0){
+        alert("Completá correctamente los datos.");return;
+    }
+
+    let totalUnidades=cantidad*unidades;
+    let subtotal=cantidad*precio;
+    let costo=subtotal/totalUnidades;
+    let venta=costo*(1+ganancia/100);
+
+    comprasActuales.push({
+        nombre,presentacion,categoria,cantidad,unidades,
+        totalUnidades,precio,subtotal,costo,venta,ganancia
+    });
+
+    document.getElementById("nombre").value="";
+    document.getElementById("presentacion").value="";
+    document.getElementById("cantidad").value="";
+    document.getElementById("precio").value="";
+    mostrarCompras();
+}
+
+function mostrarCompras(){
+    let lista=document.getElementById("listaCompras");
+    lista.innerHTML="";
+    let total=0;
+    comprasActuales.forEach((p,i)=>{
+        total+=p.subtotal;
+        let div=document.createElement("div");
+        div.className="tarjeta";
+        let info=document.createElement("p");
+        info.textContent=p.nombre+" | "+p.categoria+" | "+
+        p.totalUnidades+" unidades | Subtotal: "+dinero(p.subtotal)+
+        " | Costo por unidad: "+dinero(p.costo)+
+        " | Venta sugerida: "+dinero(p.venta);
+        let boton=document.createElement("button");
+        boton.textContent="Eliminar";
+        boton.onclick=()=>{comprasActuales.splice(i,1);mostrarCompras()};
+        div.append(info,boton);
+        lista.appendChild(div);
+    });
+    document.getElementById("totalFactura").textContent=total.toFixed(2);
+}
+
+function guardarFactura(){
+    let proveedor=document.getElementById("proveedor").value.trim();
+    let numero=document.getElementById("numeroFactura").value.trim();
+    if(!proveedor||comprasActuales.length===0){
+        alert("Ingresá proveedor y productos.");return;
+    }
+
+    comprasActuales.forEach(p=>{
+        let existente=productos.find(x=>
+            x.nombre.toLowerCase()===p.nombre.toLowerCase()&&
+            (x.presentacion||"").toLowerCase()===p.presentacion.toLowerCase()&&
+            x.categoria===p.categoria
+        );
+        if(existente){
+            existente.stock+=p.totalUnidades;
+            existente.costo=p.costo;
+            existente.venta=p.venta;
+        }else{
+            productos.push({
+                id:Date.now()+Math.random(),
+                nombre:p.nombre,presentacion:p.presentacion,
+                categoria:p.categoria,stock:p.totalUnidades,
+                costo:p.costo,venta:p.venta,minimo:5
+            });
+        }
+    });
+
+    let total=comprasActuales.reduce((s,p)=>s+p.subtotal,0);
+    facturas.push({proveedor,numero,fecha:fechaHoy(),productos:comprasActuales,total});
+    comprasActuales=[];
+    guardarDatos();
+    mostrarCompras();
+    document.getElementById("proveedor").value="";
+    document.getElementById("numeroFactura").value="";
+    actualizarTodo();
+    alert("¡Factura guardada y stock actualizado!");
+}
+
+/* STOCK */
+function mostrarStock(){
+    let lista=document.getElementById("listaStock");
+    let buscar=document.getElementById("buscarStock").value.toLowerCase();
+    lista.innerHTML="";
+    let encontrados=productos.filter(p=>p.nombre.toLowerCase().includes(buscar));
+
+    if(encontrados.length===0){
+        let fila=document.createElement("tr");
+        let celda=document.createElement("td");
+        celda.colSpan=8;celda.textContent="No hay productos registrados.";
+        fila.appendChild(celda);lista.appendChild(fila);return;
+    }
+
+    categorias.forEach(categoria=>{
+        let grupo=encontrados.filter(p=>p.categoria===categoria);
+        if(!grupo.length)return;
+        let filaCategoria=document.createElement("tr");
+        filaCategoria.className="fila-categoria";
+        let titulo=document.createElement("td");
+        titulo.colSpan=8;titulo.textContent=categoria.toUpperCase();
+        filaCategoria.appendChild(titulo);lista.appendChild(filaCategoria);
+
+        grupo.forEach(p=>{
+            let fila=document.createElement("tr");
+            let nombre=document.createElement("td");nombre.textContent=p.nombre;
+            let cat=document.createElement("td");cat.textContent=p.categoria;
+            let presentacion=document.createElement("td");presentacion.textContent=p.presentacion||"-";
+            let stock=document.createElement("td");
+            let entradaStock=document.createElement("input");
+            entradaStock.type="number";entradaStock.min="0";entradaStock.value=p.stock;
+            stock.appendChild(entradaStock);
+            let costo=document.createElement("td");costo.textContent=dinero(p.costo);
+            let venta=document.createElement("td");venta.textContent=dinero(p.venta);
+            let minimo=document.createElement("td");
+            let entradaMinimo=document.createElement("input");
+            entradaMinimo.type="number";entradaMinimo.min="0";entradaMinimo.value=p.minimo;
+            minimo.appendChild(entradaMinimo);
+            let modificar=document.createElement("td");
+            let boton=document.createElement("button");boton.textContent="GUARDAR";
+            boton.onclick=()=>{
+                if(entradaStock.value===""||entradaMinimo.value===""||
+                Number(entradaStock.value)<0||Number(entradaMinimo.value)<0){
+                    alert("Ingresá cantidades válidas.");return;
+                }
+                p.stock=Number(entradaStock.value);
+                p.minimo=Number(entradaMinimo.value);
+                guardarDatos();actualizarTodo();alert("¡Stock actualizado!");
+            };
+            modificar.appendChild(boton);
+            fila.append(nombre,cat,presentacion,stock,costo,venta,minimo,modificar);
+            lista.appendChild(fila);
+        });
+    });
+}
+
+function actualizarAlertas(){
+    let avisos=document.getElementById("avisos");
+    avisos.innerHTML="";
+    let bajos=productos.filter(p=>p.stock<=p.minimo);
+    if(bajos.length){
+        let titulo=document.createElement("h3");
+        titulo.textContent="⚠ ALERTAS DE STOCK BAJO";
+        avisos.appendChild(titulo);
+        bajos.forEach(p=>{
+            let div=document.createElement("div");
+            div.className="alerta";
+            div.textContent=p.nombre+": quedan "+p.stock+
+            " unidades. Mínimo: "+p.minimo+".";
+            avisos.appendChild(div);
+        });
+    }
+}
+
+/* VENTAS: CARRITO DE VARIOS PRODUCTOS */
+function actualizarSelector(){
+    let select=document.getElementById("productoVenta");
+    select.innerHTML="";
+    productos.forEach(p=>{
+        let op=document.createElement("option");
+        op.value=p.id;
+        op.textContent=p.nombre+" - "+dinero(p.venta);
+        select.appendChild(op);
+    });
+    cargarPrecioVenta();
+}
+
+function cargarPrecioVenta(){
+    let id=document.getElementById("productoVenta").value;
+    let p=productos.find(x=>String(x.id)===String(id));
+    document.getElementById("precioVenta").value=p?p.venta:"";
+}
+
+function agregarAlCarrito(){
+    let id=document.getElementById("productoVenta").value;
+    let p=productos.find(x=>String(x.id)===String(id));
+    let cantidad=Number(document.getElementById("cantidadVenta").value);
+    let precio=Number(document.getElementById("precioVenta").value);
+
+    if(!p||cantidad<=0||precio<=0){
+        alert("Elegí un producto y completá cantidad y precio.");return;
+    }
+
+    carritoVenta.push({
+        id:p.id,
+        producto:p.nombre,
+        cantidad:cantidad,
+        precio:precio,
+        costo:p.costo,
+        total:cantidad*precio
+    });
+
+    document.getElementById("cantidadVenta").value="";
+    mostrarCarrito();
+}
+
+function mostrarCarrito(){
+    let lista=document.getElementById("carritoVenta");
+    lista.innerHTML="";
+    let total=0;
+
+    if(carritoVenta.length===0){
+        lista.textContent="Todavía no agregaste productos.";
+    }
+
+    carritoVenta.forEach((p,i)=>{
+        total+=p.total;
+        let div=document.createElement("div");
+        div.className="producto-carrito";
+        let texto=document.createElement("span");
+        texto.textContent=p.producto+" | "+p.cantidad+
+            " unidades | "+dinero(p.precio)+" c/u | Total: "+dinero(p.total);
+        let borrar=document.createElement("button");
+        borrar.textContent="QUITAR";
+        borrar.className="boton-borrar";
+        borrar.onclick=()=>{
+            carritoVenta.splice(i,1);
+            mostrarCarrito();
+        };
+        div.append(texto,borrar);
+        lista.appendChild(div);
+    });
+
+    document.getElementById("totalCarrito").textContent=dinero(total);
+}
+
+function registrarVenta(){
+    if(carritoVenta.length===0){
+        alert("Primero añadí al menos un producto.");return;
+    }
+
+    let formaPago=document.getElementById("formaPago").value;
+    let idOperacion="venta_"+Date.now()+"_"+Math.random();
+
+    carritoVenta.forEach(p=>{
+        ventas.push({
+            ...p,
+            fecha:fechaHoy(),
+            formaPago:formaPago,
+            idOperacion:idOperacion
+        });
+    });
+
+    carritoVenta=[];
+    guardarDatos();
+    mostrarCarrito();
+    actualizarTodo();
+    alert("¡Venta completa registrada!");
+}
+
+/* LISTADO, EDICIÓN Y BORRADO DE VENTAS */
+function mostrarVentas(){
+    let lista=document.getElementById("listaVentas");
+    lista.innerHTML="";
+    let hoy=0,semana=0;
+    let grupos={};
+
+    ventas.forEach((v,i)=>{
+        if(v.fecha===fechaHoy())hoy+=Number(v.total)||0;
+        if(esEstaSemana(v.fecha))semana+=Number(v.total)||0;
+
+        let clave=v.idOperacion||("venta_antigua_"+i);
+        if(!grupos[clave])grupos[clave]=[];
+        grupos[clave].push({venta:v,indice:i});
+    });
+
+    Object.keys(grupos).forEach(clave=>{
+        let grupo=grupos[clave];
+        let total=grupo.reduce((s,x)=>s+Number(x.venta.total||0),0);
+        let div=document.createElement("div");
+        div.className="tarjeta";
+
+        let titulo=document.createElement("h3");
+        titulo.textContent="Venta del "+grupo[0].venta.fecha;
+        div.appendChild(titulo);
+
+        grupo.forEach(item=>{
+            let linea=document.createElement("p");
+            linea.textContent=item.venta.producto+" | "+
+                item.venta.cantidad+" unidades | "+
+                dinero(item.venta.total);
+            let editar=document.createElement("button");
+            editar.textContent="EDITAR PRODUCTO";
+            editar.onclick=()=>editarVenta(item.indice);
+            div.append(linea,editar);
+        });
+
+        let resumen=document.createElement("p");
+        resumen.textContent="Forma de pago: "+
+            (grupo[0].venta.formaPago||"Sin registrar")+
+            " | TOTAL: "+dinero(total);
+        div.appendChild(resumen);
+
+        let borrar=document.createElement("button");
+        borrar.textContent="BORRAR VENTA COMPLETA";
+        borrar.className="boton-borrar";
+        borrar.onclick=()=>{
+            if(confirm("¿Querés borrar toda esta venta, con todos sus productos?")){
+                ventas=ventas.filter(v=>
+                    (v.idOperacion||"")!==clave
+                );
+                if(clave.startsWith("venta_antigua_")){
+                    ventas.splice(grupo[0].indice,1);
+                }
+                guardarDatos();
+                actualizarTodo();
+                alert("Venta eliminada.");
+            }
+        };
+        div.appendChild(borrar);
+        lista.appendChild(div);
+    });
+
+    if(ventas.length===0)lista.textContent="Todavía no hay ventas registradas.";
+    document.getElementById("ingresosHoy").textContent=hoy.toFixed(2);
+    document.getElementById("ingresosSemana").textContent=semana.toFixed(2);
+}
+
+function editarVenta(i){
+    let v=ventas[i];
+
+    let cantidad=prompt("Nueva cantidad:",v.cantidad);
+    if(cantidad===null)return;
+    let precio=prompt("Nuevo precio por unidad:",v.precio);
+    if(precio===null)return;
+    let formaPago=prompt(
+        "Escribí Efectivo o Transferencia:",
+        v.formaPago||"Efectivo"
+    );
+    if(formaPago===null)return;
+
+    cantidad=Number(cantidad);
+    precio=Number(precio);
+    formaPago=formaPago.trim().toLowerCase();
+
+    if(!Number.isFinite(cantidad)||cantidad<=0||
+       !Number.isFinite(precio)||precio<=0||
+       !["efectivo","transferencia"].includes(formaPago)){
+        alert("Datos incorrectos. Revisá cantidad, precio y forma de pago.");
+        return;
+    }
+
+    v.cantidad=cantidad;
+    v.precio=precio;
+    v.total=cantidad*precio;
+    v.formaPago=formaPago==="efectivo"?"Efectivo":"Transferencia";
+
+    guardarDatos();
+    actualizarTodo();
+    alert("¡Producto de la venta modificado!");
+}
+
+/* ESTADÍSTICAS */
+function mostrarEstadisticas(){
+    if(ventas.length===0){
+        document.getElementById("masVendido").textContent="Todavía no hay ventas.";
+        document.getElementById("menosVendido").textContent="Todavía no hay ventas.";
+        document.getElementById("movimiento").textContent="Todavía no hay ventas.";
+    }else{
+        let cantidades={};
+        ventas.forEach(v=>{
+            cantidades[v.producto]=(cantidades[v.producto]||0)+Number(v.cantidad||0);
+        });
+        let ordenados=Object.keys(cantidades).sort((a,b)=>cantidades[b]-cantidades[a]);
+        document.getElementById("masVendido").textContent=
+            ordenados[0]+" ("+cantidades[ordenados[0]]+" unidades)";
+        document.getElementById("menosVendido").textContent=
+            ordenados[ordenados.length-1]+" ("+
+            cantidades[ordenados[ordenados.length-1]]+" unidades)";
+        document.getElementById("movimiento").textContent=
+            ordenados[0]+" ("+cantidades[ordenados[0]]+" unidades vendidas)";
+    }
+
+    if(productos.length===0){
+        document.getElementById("mayorStock").textContent="Todavía no hay productos.";
+    }else{
+        let mayor=productos.reduce((a,b)=>a.stock>b.stock?a:b);
+        document.getElementById("mayorStock").textContent=
+            mayor.nombre+" ("+mayor.stock+" unidades)";
+    }
+
+    let ganancia=ventas.reduce((s,v)=>
+        s+(Number(v.precio||0)-Number(v.costo||0))*Number(v.cantidad||0),0);
+    document.getElementById("gananciaTotal").textContent=dinero(ganancia);
+}
+
+/* BILLETERA */
+function mostrarBilletera(){
+    let efectivo=0,transferencia=0;
+    let efectivoDia=0,transferenciaDia=0,totalDia=0,sinPago=0;
+    let historial=document.getElementById("historialBilletera");
+    historial.innerHTML="";
+
+    ventas.forEach(v=>{
+        let total=Number(v.total)||0;
+        if(v.formaPago==="Efectivo"){
+            efectivo+=total;
+            if(v.fecha===fechaHoy())efectivoDia+=total;
+        }else if(v.formaPago==="Transferencia"){
+            transferencia+=total;
+            if(v.fecha===fechaHoy())transferenciaDia+=total;
+        }else{
+            sinPago+=total;
+        }
+
+        if(v.fecha===fechaHoy())totalDia+=total;
+
+        let div=document.createElement("div");
+        div.className="tarjeta";
+        div.textContent=v.fecha+" | "+v.producto+" | "+
+            dinero(total)+" | "+(v.formaPago||"Pago anterior sin registrar");
+        historial.appendChild(div);
+    });
+
+    if(ventas.length===0)historial.textContent="Todavía no hay movimientos.";
+
+    document.getElementById("efectivoTotal").textContent=dinero(efectivo);
+    document.getElementById("transferenciaTotal").textContent=dinero(transferencia);
+    document.getElementById("billeteraTotal").textContent=dinero(efectivo+transferencia);
+    document.getElementById("efectivoHoy").textContent=dinero(efectivoDia);
+    document.getElementById("transferenciaHoy").textContent=dinero(transferenciaDia);
+    document.getElementById("totalHoyBilletera").textContent=dinero(totalDia);
+    document.getElementById("ventasSinPago").textContent=sinPago>0?
+        "Ventas anteriores sin forma de pago registrada: "+dinero(sinPago):"";
+}
+
+function actualizarTodo(){
+    actualizarAlertas();
+    mostrarStock();
+    actualizarSelector();
+    mostrarVentas();
+    mostrarEstadisticas();
+    mostrarBilletera();
+}
+
+document.getElementById("productoVenta").addEventListener("change",cargarPrecioVenta);
+
+cargarDatos();
+actualizarTodo();
+</script>
+</body>
+</html>
